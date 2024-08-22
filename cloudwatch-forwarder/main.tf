@@ -1,6 +1,6 @@
 data "archive_file" "forwarder" {
   type        = "zip"
-  source_file = "forwarder.py"
+  source_file = "${path.module}/forwarder.py"
   output_path = "forwarder.zip"
 }
 
@@ -55,9 +55,9 @@ resource "aws_lambda_permission" "allow_cloudwatch" {
 
 
 resource "aws_cloudwatch_log_subscription_filter" "forwarder" {
-  count           = length(var.log_group_names)
-  name            = format("%s-forwarder-%s", var.prefix, element(split("/", var.log_group_names[count.index]), length(split("/", var.log_group_names[count.index])) - 1))
-  log_group_name  = var.log_group_names[count.index]
+  for_each        = { for index, name in var.log_group_names : index => name }
+  name            = format("%s-forwarder-%s", var.prefix, element(split("/", each.value), length(split("/", each.value)) - 1))
+  log_group_name  = each.value
   filter_pattern  = ""
   destination_arn = aws_lambda_function.forwarder.arn
 }
